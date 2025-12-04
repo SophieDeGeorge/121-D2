@@ -13,7 +13,7 @@ const brushThin: number = 1.0;
 const brushThick: number = 3.0;
 let brushSize = brushThin;
 
-////////////////////////////////       Cavnas Creation         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Cavnas Creation         ////////////////////////////////////////////////////////
 
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
@@ -23,8 +23,9 @@ canvas.height = 256;
 document.body.append(canvas);
 
 canvas.addEventListener("drawing-changed", redraw);
+// #endregion
 
-////////////////////////////////       Mouse Input          ////////////////////////////////////////////////////////
+////////////////////////////////       #region Mouse Input          ////////////////////////////////////////////////////////
 
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
@@ -69,8 +70,9 @@ class LineCommand {
     this.line.push(endPoint);
   }
 }
+// #endregion
 
-////////////////////////////////       Redraw         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Redraw         ////////////////////////////////////////////////////////
 function redraw() {
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas from 0,0 to maxwidth, maxheight
@@ -78,8 +80,9 @@ function redraw() {
     console.log("finished redraw");
   }
 }
+// #endregion
 
-////////////////////////////////       Clear Button         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Clear Button         ////////////////////////////////////////////////////////
 // Clear Button
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
@@ -92,8 +95,9 @@ if (ctx) {
     lines.splice(0, lines.length);
   });
 }
+// #endregion
 
-////////////////////////////////       Undo Button         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Undo Button         ////////////////////////////////////////////////////////
 // Undo Button
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "undo";
@@ -107,9 +111,10 @@ undoButton.addEventListener("click", () => {
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
 });
+// #endregion
 
-////////////////////////////////       Redo Button         ////////////////////////////////////////////////////////
-// Redo Button
+////////////////////////////////       #region Redo Button         ////////////////////////////////////////////////////////
+// Button
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "redo";
 document.body.append(redoButton);
@@ -121,8 +126,9 @@ redoButton.addEventListener("click", () => {
   }
   canvas.dispatchEvent(new Event("drawing-changed")); // Repeating code, Make function
 });
+// #endregion
 
-////////////////////////////////       Thin Button         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Thin Button         ////////////////////////////////////////////////////////
 // Button
 const thinButton = document.createElement("button");
 thinButton.innerHTML = "Thin";
@@ -134,8 +140,9 @@ thinButton.addEventListener("click", () => {
     brushSize = brushThin;
   }
 });
+// #endregion
 
-////////////////////////////////       Thick Button         ////////////////////////////////////////////////////////
+////////////////////////////////       #region Thick Button         ////////////////////////////////////////////////////////
 // Button
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "Thick";
@@ -147,3 +154,4 @@ thinButton.addEventListener("click", () => {
     brushSize = brushThick;
   }
 });
+// #endregion
