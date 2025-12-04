@@ -13,6 +13,9 @@ const brushThin: number = 1.0;
 const brushThick: number = 3.0;
 let curBrushSize: number = brushThin;
 let toolPreview: ToolPreviewCommand | null = null;
+let stickerPreview: StickerPreviewCommand | null = null;
+let brushType: string = "brush";
+let curSticker: string;
 
 //#region Canvas
 ////////////////////////////////       Cavnas Creation         ////////////////////////////////////////////////////////
@@ -39,6 +42,10 @@ canvas.addEventListener("mouseover", (e) => {
       { x: e.offsetX, y: e.offsetY },
       curBrushSize,
     );
+    stickerPreview = new StickerPreviewCommand(
+      { x: e.offsetX, y: e.offsetY },
+      curSticker,
+    );
     canvas.dispatchEvent(new Event("tool-changed"));
   }
 });
@@ -48,17 +55,23 @@ canvas.addEventListener("mouseenter", (e) => {
     { x: e.offsetX, y: e.offsetY },
     curBrushSize,
   );
+  stickerPreview = new StickerPreviewCommand(
+    { x: e.offsetX, y: e.offsetY },
+    curSticker,
+  );
   canvas.dispatchEvent(new Event("tool-changed"));
 });
 
 canvas.addEventListener("mouseout", (_e) => {
   toolPreview = null;
+  stickerPreview = null;
   canvas.dispatchEvent(new Event("tool-changed"));
   console.log("mouse out");
 });
 
 canvas.addEventListener("mousedown", (e) => {
   toolPreview = null;
+  stickerPreview = null;
   canvas.dispatchEvent(new Event("tool-changed"));
   cursor.active = true;
 
@@ -75,6 +88,10 @@ canvas.addEventListener("mousemove", (e) => {
     toolPreview = new ToolPreviewCommand(
       { x: e.offsetX, y: e.offsetY },
       curBrushSize,
+    );
+    stickerPreview = new StickerPreviewCommand(
+      { x: e.offsetX, y: e.offsetY },
+      curSticker,
     );
     canvas.dispatchEvent(new Event("tool-changed"));
   }
@@ -116,6 +133,23 @@ class LineCommand {
 }
 // #endregion
 
+class _StickerCommand {
+  point: Point;
+  text: string;
+
+  constructor(point: Point, text: string) {
+    this.point = point;
+    this.text = text;
+  }
+
+  displaySticker() {
+    if (ctx) {
+      ctx.font = "50px sans serif";
+      ctx.fillText(this.text, this.point.x, this.point.y);
+    }
+  }
+}
+
 //#region ToolPreviewCommand
 ////////////////////////////////       Tool Preview Class          ////////////////////////////////////////////////////////
 
@@ -128,15 +162,29 @@ class ToolPreviewCommand {
     this.radius = 1.0 * brushSize;
   }
 
-  drawPreview(ctx: CanvasRenderingContext2D) {
+  DrawPreview(ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
     ctx.arc(this.mouse.x, this.mouse.y, this.radius, 0, 2 * Math.PI);
     ctx.fillStyle = "black";
     ctx.fill();
     ctx.stroke();
-    canvas.addEventListener("tool-changed", redraw);
   }
 }
+
+class StickerPreviewCommand {
+  point: Point;
+  text: string;
+
+  constructor(point: Point, text: string) {
+    this.point = point;
+    this.text = text;
+  }
+
+  DrawStickerPreview(ctx: CanvasRenderingContext2D) {
+    ctx.fillText(this.text, this.point.x, this.point.y);
+  }
+}
+
 //#endregion
 
 //#region Redraw
@@ -145,8 +193,11 @@ function redraw() {
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas from 0,0 to maxwidth, maxheight
     lines.forEach((line: LineCommand) => line.display(ctx));
-    if (toolPreview) {
-      toolPreview.drawPreview(ctx);
+    if (toolPreview && (brushType == "brush")) {
+      toolPreview.DrawPreview(ctx);
+    }
+    if (stickerPreview && (brushType == "sticker")) {
+      stickerPreview.DrawStickerPreview(ctx);
     }
   }
 }
@@ -220,6 +271,7 @@ thinButton.addEventListener("click", () => {
     thinButton.style.backgroundColor = "yellow";
     thickButton.style.backgroundColor = "transparent";
   }
+  brushType = "brush";
 });
 // #endregion
 
@@ -238,6 +290,7 @@ thickButton.addEventListener("click", () => {
     thickButton.style.backgroundColor = "yellow";
     thinButton.style.backgroundColor = "transparent";
   }
+  brushType = "brush";
 });
 // #endregion
 
@@ -246,7 +299,6 @@ const stickers: string[] = [];
 stickers.push("👁️");
 stickers.push("🐶");
 stickers.push("🥞");
-//#endregion
 
 stickers.forEach((element) => {
   const newButton: HTMLButtonElement = document.createElement(
@@ -256,6 +308,10 @@ stickers.forEach((element) => {
   newButton.innerHTML = element;
 
   newButton.addEventListener("click", () => {
+    curSticker = element;
+    brushType = "sticker";
+    console.log(brushType);
   });
   buttonContainer.appendChild(newButton);
 });
+//#endregion
