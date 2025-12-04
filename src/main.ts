@@ -12,6 +12,7 @@ let curLine: LineCommand;
 const brushThin: number = 1.0;
 const brushThick: number = 3.0;
 let curBrushSize: number = brushThin;
+let toolPreview: ToolPreviewCommand | null = null;
 
 //#region Canvas
 ////////////////////////////////       Cavnas Creation         ////////////////////////////////////////////////////////
@@ -21,15 +22,42 @@ const ctx = canvas.getContext("2d");
 const cursor = { active: false, x: 0, y: 0 };
 canvas.width = 256;
 canvas.height = 256;
+canvas.style.cursor = "none";
 document.body.append(canvas);
 
 canvas.addEventListener("drawing-changed", redraw);
+canvas.addEventListener("tool-changed", redraw);
 // #endregion
 
 //#region Mouse Input
 ////////////////////////////////       Mouse Input          ////////////////////////////////////////////////////////
+canvas.addEventListener("mouseover", (e) => {
+  if (cursor.active == false) {
+    toolPreview = new ToolPreviewCommand(
+      { x: e.offsetX, y: e.offsetY },
+      curBrushSize,
+    );
+    canvas.dispatchEvent(new Event("tool-changed"));
+  }
+});
+
+canvas.addEventListener("mouseenter", (e) => {
+  toolPreview = new ToolPreviewCommand(
+    { x: e.offsetX, y: e.offsetY },
+    curBrushSize,
+  );
+  canvas.dispatchEvent(new Event("tool-changed"));
+});
+
+canvas.addEventListener("mouseout", (_e) => {
+  toolPreview = null;
+  canvas.dispatchEvent(new Event("tool-changed"));
+  console.log("mouse out");
+});
 
 canvas.addEventListener("mousedown", (e) => {
+  toolPreview = null;
+  canvas.dispatchEvent(new Event("tool-changed"));
   cursor.active = true;
 
   curLine = new LineCommand({ x: e.offsetX, y: e.offsetY }, curBrushSize);
@@ -41,6 +69,12 @@ canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
     curLine.drag({ x: e.offsetX, y: e.offsetY });
     canvas.dispatchEvent(new Event("drawing-changed"));
+  } else {
+    toolPreview = new ToolPreviewCommand(
+      { x: e.offsetX, y: e.offsetY },
+      curBrushSize,
+    );
+    canvas.dispatchEvent(new Event("tool-changed"));
   }
 });
 
@@ -80,13 +114,38 @@ class LineCommand {
 }
 // #endregion
 
+//#region ToolPreviewCommand
+////////////////////////////////       Tool Preview Class          ////////////////////////////////////////////////////////
+
+class ToolPreviewCommand {
+  radius: number;
+  mouse: Point;
+
+  constructor(mousePosition: Point, brushSize: number) {
+    this.mouse = mousePosition;
+    this.radius = 1.0 * brushSize;
+  }
+
+  drawPreview(ctx: CanvasRenderingContext2D) {
+    ctx.beginPath();
+    ctx.arc(this.mouse.x, this.mouse.y, this.radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "black";
+    ctx.fill();
+    ctx.stroke();
+    canvas.addEventListener("tool-changed", redraw);
+  }
+}
+//#endregion
+
 //#region Redraw
 ////////////////////////////////       Redraw Function        ////////////////////////////////////////////////////////
 function redraw() {
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas from 0,0 to maxwidth, maxheight
     lines.forEach((line: LineCommand) => line.display(ctx));
-    console.log("finished redraw");
+    if (toolPreview) {
+      toolPreview.drawPreview(ctx);
+    }
   }
 }
 // #endregion
