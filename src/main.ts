@@ -57,10 +57,13 @@ bus.addEventListener("tool-changed", () => {
 ////////////////////////////////       Mouse Input          ////////////////////////////////////////////////////////
 canvas.addEventListener("mouseover", (e) => {
   if (cursor.active == false) {
-    toolPreview = new ToolPreviewCommand(
-      { x: e.offsetX, y: e.offsetY },
-      curBrushSize,
-    );
+    if (brushType == "brush") {
+      toolPreview = new ToolPreviewCommand(
+        { x: e.offsetX, y: e.offsetY },
+        curBrushSize,
+      );
+    }
+
     stickerPreview = new StickerPreviewCommand(
       { x: e.offsetX, y: e.offsetY },
       stickerString,
@@ -71,10 +74,13 @@ canvas.addEventListener("mouseover", (e) => {
 });
 
 canvas.addEventListener("mouseenter", (e) => {
-  toolPreview = new ToolPreviewCommand(
-    { x: e.offsetX, y: e.offsetY },
-    curBrushSize,
-  );
+  if (brushType == "brush") {
+    toolPreview = new ToolPreviewCommand(
+      { x: e.offsetX, y: e.offsetY },
+      curBrushSize,
+    );
+  }
+
   stickerPreview = new StickerPreviewCommand(
     { x: e.offsetX, y: e.offsetY },
     stickerString,
@@ -93,30 +99,26 @@ canvas.addEventListener("mouseout", (_e) => {
 
 canvas.addEventListener("mousedown", (e) => {
   toolPreview = null;
-  stickerPreview = null;
+  stickerPreview = new StickerPreviewCommand(
+    { x: e.offsetX, y: e.offsetY },
+    stickerString,
+  );
   notify("tool-changed");
   cursor.active = true;
 
   if (brushType == "brush") {
     curLine = new LineCommand({ x: e.offsetX, y: e.offsetY }, curBrushSize);
     lines.push(curLine);
-
-    notify("drawing-changed");
-  } else if (brushType == "sticker") {
-    curSticker = new StickerCommand(
-      { x: e.offsetX, y: e.offsetY },
-      stickerString,
-    );
-    stickers.push(curSticker);
   }
+  notify("drawing-changed");
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
     if (brushType == "brush") {
       curLine.drag({ x: e.offsetX, y: e.offsetY });
-    } else if (brushType == "sticker") {
-      curSticker.drag({ x: e.offsetX, y: e.offsetY });
+    } else if (brushType == "sticker" && stickerPreview) {
+      stickerPreview.drag({ x: e.offsetX, y: e.offsetY });
     }
 
     notify("drawing-changed");
@@ -135,10 +137,17 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 // On mouseUp, stop drawing
-canvas.addEventListener("mouseup", (_e) => {
+canvas.addEventListener("mouseup", (e) => {
   cursor.active = false;
+  if (brushType == "sticker") {
+    curSticker = new StickerCommand(
+      { x: e.offsetX, y: e.offsetY },
+      stickerString,
+    );
+    stickers.push(curSticker);
 
-  notify("drawing-changed");
+    notify("drawing-changed");
+  }
 });
 //#endregion
 
@@ -174,7 +183,6 @@ class LineCommand {
 class StickerCommand {
   point: Point;
   text: string;
-  rotation: number = 0;
 
   constructor(point: Point, text: string) {
     this.point = point;
@@ -184,14 +192,12 @@ class StickerCommand {
   displaySticker(ctx: CanvasRenderingContext2D) {
     if (ctx) {
       ctx.font = "50px sans serif";
-      ctx.rotate(this.rotation);
       ctx.fillText(this.text, this.point.x, this.point.y);
     }
   }
 
-  drag(point: Point) {
-    console.log("Sticker  drag");
-    this.rotation = Math.atan2(point.y - this.point.y, point.x - this.point.x);
+  drag(_point: Point) {
+    console.log("Sticker drag");
   }
 }
 
@@ -232,8 +238,11 @@ class StickerPreviewCommand {
 
   drag(point: Point) {
     console.log("Sticker preview drag");
-    this.point.x = point.x;
-    this.point.y = point.y;
+    this.point = point;
+    if (ctx) {
+      ctx.font = "50px sans serif";
+      ctx.fillText(this.text, this.point.x, this.point.y);
+    }
   }
 }
 
